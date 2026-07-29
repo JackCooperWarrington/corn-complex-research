@@ -1,0 +1,67 @@
+---
+title: "Corn Complex Research Dashboard"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+corn_px  <- read.csv("../data/processed/corn_px.csv")
+corn_sd  <- read.csv("../data/processed/corn_sd_with_fit.csv")
+margin   <- read.csv("../data/processed/ethanol_margin.csv")
+corn_px$date  <- as.Date(corn_px$date)
+margin$date   <- as.Date(margin$date)
+current <- corn_sd |> filter(marketing_year == "2026/27")
+```
+
+Column {data-width=550}
+-----------------------------------------------------------------------
+
+### Corn futures price ($/bu), 2015-2026
+
+```{r}
+ggplot(corn_px, aes(date, corn_usd)) +
+  geom_line(colour = "#1F4E23") +
+  labs(x = NULL, y = "$/bu") +
+  theme_minimal()
+```
+
+### Ethanol crush margin ($/bu)
+
+```{r}
+ggplot(margin, aes(as.Date(date), crush_margin)) +
+  geom_hline(yintercept = 0, colour = "grey60", linewidth = 0.3) +
+  geom_line(colour = "#1F4E23", linewidth = 0.7) +
+  labs(x = NULL, y = "$/bu") +
+  theme_minimal()
+```
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+
+### Stocks-to-use vs. price (2005/06-2026/27)
+
+```{r}
+ggplot(corn_sd, aes(stocks_to_use, avg_farm_price)) +
+  geom_point(colour = "#1F4E23", size = 2.4) +
+  geom_smooth(method = "lm", se = FALSE, colour = "grey40", linetype = "dashed") +
+  geom_point(data = current, colour = "firebrick", size = 3.6) +
+  labs(x = "Stocks-to-use (%)", y = "$/bu") +
+  theme_minimal()
+```
+
+### Current balance snapshot (2026/27)
+
+```{r}
+knitr::kable(data.frame(
+  Metric = c("Production (mb)","Total use (mb)","Ending stocks (mb)",
+             "Stocks-to-use","Avg farm price"),
+  Value  = c("16,000","16,255","1,790","11.0%","$4.40")
+))
+```
